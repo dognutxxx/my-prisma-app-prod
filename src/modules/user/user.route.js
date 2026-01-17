@@ -1,6 +1,7 @@
 const express = require('express');
 const userController = require('./user.controller');
 const authMiddleware = require('../../middlewares/auth.middleware');
+const roleMiddleware = require('../../middlewares/role.middleware');
 
 const router = express.Router();
 
@@ -8,6 +9,17 @@ const router = express.Router();
  * @swagger
  * components:
  *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         email:
+ *           type: string
+ *         name:
+ *           type: string
+ *         role:
+ *           type: string
  *     UserCreate:
  *       type: object
  *       required:
@@ -15,10 +27,8 @@ const router = express.Router();
  *       properties:
  *         email:
  *           type: string
- *           description: The user's email
  *         name:
  *           type: string
- *           description: The user's name
  *       example:
  *         email: johndoe@example.com
  *         name: John Doe
@@ -27,10 +37,8 @@ const router = express.Router();
  *       properties:
  *         email:
  *           type: string
- *           description: The user's email
  *         name:
  *           type: string
- *           description: The user's name
  *       example:
  *         email: johndoe@example.com
  *         name: John Doe
@@ -47,7 +55,7 @@ const router = express.Router();
  * @swagger
  * /api/users:
  *   get:
- *     summary: Returns the list of all the users
+ *     summary: Returns the list of all the users (ADMIN only)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -60,8 +68,10 @@ const router = express.Router();
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/User'
+ *       403:
+ *         description: Forbidden
  *   post:
- *     summary: Create a new user
+ *     summary: Create a new user (ADMIN only)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -78,8 +88,6 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/User'
- *       500:
- *         description: Some server error
  * 
  * /api/users/{id}:
  *   get:
@@ -90,19 +98,10 @@ const router = express.Router();
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
- *         description: The user id
  *     responses:
  *       200:
  *         description: The user description by id
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       404:
- *         description: User not found
  *   patch:
  *     summary: Update the user by id
  *     tags: [Users]
@@ -111,51 +110,35 @@ const router = express.Router();
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
- *         description: The user id
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UserUpdate'
  *     responses:
  *       200:
  *         description: The updated user
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       404:
- *         description: User not found
  *   delete:
- *     summary: Delete the user by id
+ *     summary: Delete the user by id (ADMIN only)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
- *         schema:
- *           type: integer
  *         required: true
- *         description: The user id
  *     responses:
  *       200:
  *         description: The user was deleted
- *       404:
- *         description: User not found
+ *       403:
+ *         description: Forbidden
  */
 
 router.use(authMiddleware);
 
-router.get('/', userController.getUsers);
-router.post('/', userController.createUser);
+// Restricted to ADMIN
+router.get('/', roleMiddleware(['ADMIN']), userController.getUsers);
+router.post('/', roleMiddleware(['ADMIN']), userController.createUser);
+router.delete('/:id', roleMiddleware(['ADMIN']), userController.deleteUser);
+
+// Accessible by any authenticated user
 router.get('/:id', userController.getUserById);
 router.patch('/:id', userController.updateUser);
-router.delete('/:id', userController.deleteUser);
-
 
 module.exports = router;
