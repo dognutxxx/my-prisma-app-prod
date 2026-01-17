@@ -3,6 +3,9 @@ const cors = require('cors');
 const errorMiddleware = require('./middlewares/error.middleware');
 const rateLimitMiddleware = require('./middlewares/rateLimit.middleware');
 const userRoute = require('./modules/user/user.route');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
+
 const app = express();
 
 const helmet = require('helmet');
@@ -20,8 +23,6 @@ app.use(rateLimitMiddleware);
 
 // Swagger - only in development
 if (process.env.NODE_ENV !== 'production') {
-  const swaggerUi = require('swagger-ui-express');
-  const swaggerSpecs = require('./config/swagger');
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 }
 
